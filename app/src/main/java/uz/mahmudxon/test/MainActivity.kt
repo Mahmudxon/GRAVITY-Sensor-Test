@@ -1,44 +1,40 @@
 package uz.mahmudxon.test
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.hardware.*
-import androidx.appcompat.app.AppCompatActivity
+import android.hardware.Sensor
+import android.hardware.SensorManager
 import android.os.Bundle
-import android.util.Log
-import android.widget.TextView
-import kotlin.math.absoluteValue
+import android.view.animation.RotateAnimation
+import android.widget.ImageView
+import androidx.appcompat.app.AppCompatActivity
 
-class MainActivity : AppCompatActivity(), SensorEventListener {
-    val TAG = "MainActivity"
+class MainActivity : AppCompatActivity() {
+    lateinit var image: ImageView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        image = findViewById(R.id.image)
         val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val sensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY)
+        sensorManager.registerListener(Screen, sensor, SensorManager.SENSOR_DELAY_UI)
+        Screen.orientationListener = { current, next ->
+            var c = Screen.getDegrees(current)
+            var n = Screen.getDegrees(next)
 
-        sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI)
-    }
-
-    @SuppressLint("SetTextI18n")
-    override fun onSensorChanged(event: SensorEvent?) {
-        Log.d(TAG, "onSensorChanged: event: ${event?.values?.asList()}")
-        val x = event?.values?.get(0) ?: 0.0f
-        val y = event?.values?.get(1) ?: 0.0f
-        val z = event?.values?.get(2) ?: 0.0f
-        val needChange = x.absoluteValue + y.absoluteValue > 8.0f
-
-        if(needChange) {
-            if (x < -7 || x > 7) {
-                findViewById<TextView?>(R.id.textView)?.text = "Landscape"
-            } else {
-                findViewById<TextView?>(R.id.textView)?.text = "Portrait"
+            if(n == 180f)
+            {
+                n = if(c > 0f) 180f else -180f
             }
+            if(c == 180f)
+            {
+                c = if(n > 0f) 180f else -180f
+            }
+
+            val anim = RotateAnimation(c, n, image.width / 2f, image.height / 2f)
+            anim.duration = 500
+            anim.fillAfter = true
+            image.startAnimation(anim)
         }
-
-    }
-
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        Log.d(TAG, "onAccuracyChanged: sensor: $sensor accuracy: $accuracy")
     }
 }
